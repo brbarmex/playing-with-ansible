@@ -1,0 +1,43 @@
+---
+- name: Update Docker image version in Dockerfile
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    repositories:
+      - repo: {{repository}}
+        dest: {{folder}}
+        branch: {{branch-name}}
+      - repo: {{repository}}
+        dest: {{folder}}
+        branch: {{branch-name}}
+      - repo: {{repository}}
+        dest: {{folder}}
+        branch: {{branch-name}}
+
+  tasks:
+    - name: Update Docker image version in Dockerfile
+      block:
+        - name: Remove existing directory
+          file:
+            path: "{{ item.dest }}"
+            state: absent
+
+        - name: Clone the GitHub repository
+          git:
+            repo: "{{ item.repo }}"
+            dest: "{{ item.dest }}"
+            version: main
+
+        - name: Update Docker image version in Dockerfile
+          replace:
+            path: "{{ item.dest }}/dockerfile"
+            regexp: 'FROM golang:[0-9.]+'
+            replace: 'FROM golang:1.20'
+
+        - name: Commit changes
+          command: git -C "{{ item.dest }}" commit -am "Update Docker image version to 1.20"
+
+        - name: Push changes to remote repository
+          command: git -C "{{ item.dest }}" push origin HEAD:"{{ item.branch }}"
+      with_items: "{{ repositories }}"
