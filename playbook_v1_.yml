@@ -1,0 +1,26 @@
+---
+- name: Update Docker image version in Dockerfile
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Remove existing directory
+      file:
+        path: /tmp/playing-with-ansible
+        state: absent
+    - name: Clone the GitHub repository
+      git:
+        repo: https://github.com/brbarmex/playing-with-ansible.git
+        dest: /tmp/playing-with-ansible
+        version: main
+    - name: Update Docker image version in Dockerfile
+      replace:
+        path: /tmp/playing-with-ansible/dockerfile
+        regexp: 'FROM golang:[0-9.]+'
+        replace: 'FROM golang:1.20'
+
+    - name: Commit changes
+      command: git -C /tmp/playing-with-ansible commit -am "Update Docker image version to 1.20"
+
+    - name: Push changes to remote repository
+      command: git -C /tmp/playing-with-ansible push origin HEAD:feature/update-docker-image
